@@ -66,11 +66,20 @@ PYTHONPATH=src python -m shelly_exporter --host 192.0.2.10 --listen-port 8000
 
 - `shelly_up` – 1 when the exporter successfully scrapes the device, otherwise 0.
 - `shelly_total_power_watts` – Sum of active power across all phases (if provided by the device).
+- `shelly_total_apparent_power_va` – Sum of apparent power across all phases.
+- `shelly_total_reactive_power_var` – Sum of reactive power across all phases.
+- `shelly_total_energy_wh` – Cumulative delivered energy across all phases.
+- `shelly_total_returned_energy_wh` – Cumulative returned energy across all phases.
+- `shelly_frequency_hz` – Reported grid frequency.
 - `shelly_phase_power_watts{phase="X"}` – Active power per phase.
 - `shelly_phase_voltage_volts{phase="X"}` – Voltage per phase.
 - `shelly_phase_current_amperes{phase="X"}` – Current per phase.
 - `shelly_phase_energy_wh{phase="X"}` – Total delivered energy (watt-hours).
 - `shelly_phase_returned_energy_wh{phase="X"}` – Total returned energy (watt-hours).
+- `shelly_phase_apparent_power_va{phase="X"}` – Apparent power per phase.
+- `shelly_phase_reactive_power_var{phase="X"}` – Reactive power per phase.
+- `shelly_phase_power_factor{phase="X"}` – Power factor per phase.
+- Additional per-phase and device-level numeric values exposed directly from the Shelly API using the `shelly_phase_*` and `shelly_*` prefixes.
 
 ## Notes
 

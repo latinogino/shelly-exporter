@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 import requests
@@ -30,12 +30,22 @@ class PhaseReading:
     current_a: Optional[float] = None
     energy_wh: Optional[float] = None
     returned_energy_wh: Optional[float] = None
+    apparent_power_va: Optional[float] = None
+    reactive_power_var: Optional[float] = None
+    power_factor: Optional[float] = None
+    extra_metrics: Dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
 class ShellyStatus:
     phases: List[PhaseReading]
     total_power_w: Optional[float] = None
+    total_apparent_power_va: Optional[float] = None
+    total_reactive_power_var: Optional[float] = None
+    total_energy_wh: Optional[float] = None
+    total_returned_energy_wh: Optional[float] = None
+    frequency_hz: Optional[float] = None
+    misc_metrics: Dict[str, float] = field(default_factory=dict)
 
 
 class ShellyPro3EMClient:
@@ -114,26 +124,79 @@ class ShellyPro3EMClient:
             "current": "current_a",
             "act_energy": "energy_wh",
             "act_ret_energy": "returned_energy_wh",
+            "apparent_power": "apparent_power_va",
+            "reactive_power": "reactive_power_var",
+            "pf": "power_factor",
         }
 
         found_metric = False
         for prefix in phase_prefixes:
-            kwargs: Dict[str, Optional[float]] = {"phase": prefix.upper()}
+            kwargs: Dict[str, Optional[float]] = {"phase": prefix.upper(), "extra_metrics": {}}
             for key_suffix, attr in metrics.items():
                 value = data.get(f"{prefix}_{key_suffix}")
                 if isinstance(value, (int, float)):
                     kwargs[attr] = value
                     found_metric = True
+            for key, value in data.items():
+                if not key.startswith(f"{prefix}_"):
+                    continue
+                suffix = key[len(prefix) + 1 :]
+                if suffix not in metrics and isinstance(value, (int, float)):
+                    kwargs["extra_metrics"][suffix] = value
             phases.append(PhaseReading(**kwargs))
 
         if not found_metric:
             return None
 
         total_power = data.get("total_act_power") or data.get("total_power")
+        total_apparent_power = data.get("total_apparent_power")
+        total_reactive_power = data.get("total_reactive_power")
+        total_energy = data.get("total_act_energy")
+        total_returned_energy = data.get("total_act_ret_energy")
+        frequency = data.get("freq") or data.get("frequency")
+
+        misc_metrics: Dict[str, float] = {}
+        for key, value in data.items():
+            if not isinstance(value, (int, float)):
+                continue
+            if key.startswith(tuple(f"{prefix}_" for prefix in phase_prefixes)):
+                continue
+            if key.startswith("total_") and key in {
+                "total_act_power",
+                "total_power",
+                "total_apparent_power",
+                "total_reactive_power",
+                "total_act_energy",
+                "total_act_ret_energy",
+            }:
+                continue
+            if key in {"freq", "frequency"}:
+                continue
+            misc_metrics[key] = value
+
         if not isinstance(total_power, (int, float)):
             total_power = None
+        if not isinstance(total_apparent_power, (int, float)):
+            total_apparent_power = None
+        if not isinstance(total_reactive_power, (int, float)):
+            total_reactive_power = None
+        if not isinstance(total_energy, (int, float)):
+            total_energy = None
+        if not isinstance(total_returned_energy, (int, float)):
+            total_returned_energy = None
+        if not isinstance(frequency, (int, float)):
+            frequency = None
 
-        return ShellyStatus(phases=phases, total_power_w=total_power)
+        return ShellyStatus(
+            phases=phases,
+            total_power_w=total_power,
+            total_apparent_power_va=total_apparent_power,
+            total_reactive_power_var=total_reactive_power,
+            total_energy_wh=total_energy,
+            total_returned_energy_wh=total_returned_energy,
+            frequency_hz=frequency,
+            misc_metrics=misc_metrics,
+        )
 
 
 class ShellyCollector:
@@ -161,6 +224,49 @@ class ShellyCollector:
             total_power.add_metric([], status.total_power_w)
             yield total_power
 
+        total_apparent_power = GaugeMetricFamily(
+            "shelly_total_apparent_power_va",
+            "Total apparent power across all phases",
+            labels=[],
+        )
+        if status.total_apparent_power_va is not None:
+            total_apparent_power.add_metric([], status.total_apparent_power_va)
+            yield total_apparent_power
+
+        total_reactive_power = GaugeMetricFamily(
+            "shelly_total_reactive_power_var",
+            "Total reactive power across all phases",
+            labels=[],
+        )
+        if status.total_reactive_power_var is not None:
+            total_reactive_power.add_metric([], status.total_reactive_power_var)
+            yield total_reactive_power
+
+        total_energy = GaugeMetricFamily(
+            "shelly_total_energy_wh",
+            "Total delivered energy across all phases",
+            labels=[],
+        )
+        if status.total_energy_wh is not None:
+            total_energy.add_metric([], status.total_energy_wh)
+            yield total_energy
+
+        total_returned_energy = GaugeMetricFamily(
+            "shelly_total_returned_energy_wh",
+            "Total returned energy across all phases",
+            labels=[],
+        )
+        if status.total_returned_energy_wh is not None:
+            total_returned_energy.add_metric([], status.total_returned_energy_wh)
+            yield total_returned_energy
+
+        frequency = GaugeMetricFamily(
+            "shelly_frequency_hz", "Measured grid frequency", labels=[]
+        )
+        if status.frequency_hz is not None:
+            frequency.add_metric([], status.frequency_hz)
+            yield frequency
+
         phase_power = GaugeMetricFamily(
             "shelly_phase_power_watts", "Phase active power", labels=["phase"]
         )
@@ -176,6 +282,17 @@ class ShellyCollector:
         phase_returned = GaugeMetricFamily(
             "shelly_phase_returned_energy_wh", "Total returned energy", labels=["phase"]
         )
+        phase_apparent_power = GaugeMetricFamily(
+            "shelly_phase_apparent_power_va", "Phase apparent power", labels=["phase"]
+        )
+        phase_reactive_power = GaugeMetricFamily(
+            "shelly_phase_reactive_power_var", "Phase reactive power", labels=["phase"]
+        )
+        phase_pf = GaugeMetricFamily(
+            "shelly_phase_power_factor", "Phase power factor", labels=["phase"]
+        )
+
+        dynamic_phase_metrics: Dict[str, GaugeMetricFamily] = {}
 
         for reading in status.phases:
             if reading.power_w is not None:
@@ -188,12 +305,39 @@ class ShellyCollector:
                 phase_energy.add_metric([reading.phase], reading.energy_wh)
             if reading.returned_energy_wh is not None:
                 phase_returned.add_metric([reading.phase], reading.returned_energy_wh)
+            if reading.apparent_power_va is not None:
+                phase_apparent_power.add_metric([reading.phase], reading.apparent_power_va)
+            if reading.reactive_power_var is not None:
+                phase_reactive_power.add_metric([reading.phase], reading.reactive_power_var)
+            if reading.power_factor is not None:
+                phase_pf.add_metric([reading.phase], reading.power_factor)
+            for key, value in reading.extra_metrics.items():
+                metric_name = f"shelly_phase_{key}"
+                if metric_name not in dynamic_phase_metrics:
+                    dynamic_phase_metrics[metric_name] = GaugeMetricFamily(
+                        metric_name,
+                        f"Phase metric reported by Shelly ({key})",
+                        labels=["phase"],
+                    )
+                dynamic_phase_metrics[metric_name].add_metric([reading.phase], value)
 
         yield phase_power
         yield phase_voltage
         yield phase_current
         yield phase_energy
         yield phase_returned
+        yield phase_apparent_power
+        yield phase_reactive_power
+        yield phase_pf
+        yield from dynamic_phase_metrics.values()
+
+        for key, value in status.misc_metrics.items():
+            metric_name = f"shelly_{key}"
+            gauge = GaugeMetricFamily(
+                metric_name, f"Metric reported by Shelly ({key})", labels=[],
+            )
+            gauge.add_metric([], value)
+            yield gauge
 
 
 def parse_args() -> argparse.Namespace:
