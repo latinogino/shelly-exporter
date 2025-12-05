@@ -76,11 +76,17 @@ PYTHONPATH=src python src/shelly_exporter.py --host 192.0.2.10 --listen-port 800
 - **Docker port conflicts:** Adjust `LISTEN_PORT` and the published port if `8000` is already in use.
 
 ## Project Structure
-- `src/shelly_exporter.py` – Entry point for the exporter.
-- `src/` – Core exporter logic and helpers.
-- `tests/` – Smoke test scripts for validating Shelly API responses and metric emission.
-- `Dockerfile` – Container build definition.
-- `requirements.txt` – Python dependencies for running the exporter and tests.
+```
+.
+├── Dockerfile                  # Container build definition
+├── README.md                   # Project overview and usage
+├── requirements.txt            # Python dependencies for exporter and tests
+├── src                         # Application code
+│   └── shelly_exporter.py      # Prometheus exporter entry point
+└── tests                       # Basic connectivity and metric validation checks
+    ├── api_status_check.py
+    └── metrics_collection_check.py
+```
 
 ## API Documentation
 - **Prometheus metrics**
