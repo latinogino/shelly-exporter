@@ -55,12 +55,15 @@ class ShellyPro3EMClient:
         protocol: str = "http",
         port: Optional[int] = None,
         timeout: int = 5,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
     ) -> None:
         self.base = f"{protocol}://{host}"
         if port:
             self.base = f"{self.base}:{port}"
         self.timeout = timeout
+        self.auth = (username, password) if username and password else None
         self.logger = logger or logging.getLogger("shelly_exporter")
 
     def fetch_status(self) -> ShellyStatus:
@@ -82,7 +85,7 @@ class ShellyPro3EMClient:
     def _request_json(self, path: str) -> Dict:
         url = f"{self.base}{path}"
         self.logger.debug("Requesting %s", url)
-        response = requests.get(url, timeout=self.timeout)
+        response = requests.get(url, timeout=self.timeout, auth=self.auth)
         response.raise_for_status()
         return response.json()
 
@@ -388,6 +391,16 @@ def parse_args() -> argparse.Namespace:
         help="Timeout in seconds for Shelly API requests",
     )
     parser.add_argument(
+        "--username",
+        default=os.environ.get("SHELLY_USERNAME"),
+        help="Optional username for Shelly HTTP Basic Auth (SHELLY_USERNAME)",
+    )
+    parser.add_argument(
+        "--password",
+        default=os.environ.get("SHELLY_PASSWORD"),
+        help="Optional password for Shelly HTTP Basic Auth (SHELLY_PASSWORD)",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose logging",
@@ -407,6 +420,8 @@ def main():
         protocol=args.protocol,
         port=args.shelly_port,
         timeout=args.timeout,
+        username=args.username,
+        password=args.password,
         logger=logger,
     )
 
