@@ -20,6 +20,8 @@ The exporter can be configured via command-line flags or environment variables. 
 | `--listen-address` | `LISTEN_ADDRESS` | `0.0.0.0` | Address to bind the exporter. |
 | `--listen-port` | `LISTEN_PORT` | `8000` | Port to expose Prometheus metrics. |
 | `--timeout` | `SHELLY_TIMEOUT` | `5` | Shelly API request timeout (seconds). |
+| `--username` | `SHELLY_USERNAME` | _empty_ | Optional username for HTTP Basic Auth on the Shelly. |
+| `--password` | `SHELLY_PASSWORD` | _empty_ | Optional password for HTTP Basic Auth on the Shelly. |
 | `--verbose` | _n/a_ | off | Enable debug logging. |
 
 ## Running with Docker (Linux)
@@ -84,4 +86,4 @@ PYTHONPATH=src python -m shelly_exporter --host 192.0.2.10 --listen-port 8000
 ## Notes
 
 - The exporter queries the legacy `/status` endpoint first for broad compatibility and falls back to `/rpc/EM.GetStatus` when needed.
-- Shelly Pro 3EM devices do not require authentication for local status endpoints by default. If you enable authentication, provide the required credentials via network configuration (not currently supported by this exporter).
+- Shelly Pro 3EM devices do not require authentication for local status endpoints by default. If you enable authentication, supply credentials with `--username/--password` or `SHELLY_USERNAME/SHELLY_PASSWORD`.
