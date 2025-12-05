@@ -30,7 +30,7 @@ ished to your registry.
 1. Build the image (run from the repository root):
 
    ```bash
-   docker build -t shelly-pro-3em-exporter .
+   docker build -t shelly-pro-3em-exporter https://github.com/latinogino/shelly-exporter.git
    ```
 
 2. Start the container, passing your Shelly device address via environment variables:
