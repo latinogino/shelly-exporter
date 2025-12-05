@@ -61,7 +61,7 @@ You can also run the exporter without Docker (from the repository root):
 
 ```bash
 pip install -r requirements.txt
-PYTHONPATH=src python -m shelly_exporter --host 192.0.2.10 --listen-port 8000
+PYTHONPATH=src python src/shelly_exporter.py --host 192.0.2.10 --listen-port 8000
 ```
 
 ## Testing against a Shelly device
