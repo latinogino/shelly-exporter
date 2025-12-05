@@ -5,6 +5,8 @@ A lightweight Prometheus exporter that scrapes metrics directly from a Shelly Pr
 ## Features
 
 - Supports both legacy `/status` and modern `/rpc/EM.GetStatus` Shelly APIs (no credentials required).
+  The exporter first calls `/rpc/EM.GetStatus?id=0` as recommended by current Shelly
+  firmware documentation and falls back to the legacy call shape for older devices.
 - Exposes per-phase power, voltage, current, energy, and returned energy metrics.
 - Provides a `shelly_up` gauge to indicate device availability.
 

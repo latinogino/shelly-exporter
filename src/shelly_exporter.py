@@ -2,9 +2,10 @@ import argparse
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
+from requests import HTTPError
 from prometheus_client import start_http_server
 from prometheus_client.core import CollectorRegistry, GaugeMetricFamily
 
@@ -76,16 +77,20 @@ class ShellyPro3EMClient:
         except Exception as exc:  # pylint: disable=broad-except
             self.logger.debug("Legacy /status endpoint unavailable: %s", exc)
 
-        data = self._request_json("/rpc/EM.GetStatus")
+        try:
+            data = self._request_json("/rpc/EM.GetStatus", params={"id": 0})
+        except HTTPError as exc:
+            self.logger.debug("EM.GetStatus with id=0 failed: %s", exc)
+            data = self._request_json("/rpc/EM.GetStatus")
         parsed = self._parse_rpc_status(data)
         if parsed:
             return parsed
         raise RuntimeError("Unable to parse Shelly response for EM data")
 
-    def _request_json(self, path: str) -> Dict:
+    def _request_json(self, path: str, params: Optional[Dict[str, Any]] = None) -> Dict:
         url = f"{self.base}{path}"
         self.logger.debug("Requesting %s", url)
-        response = requests.get(url, timeout=self.timeout, auth=self.auth)
+        response = requests.get(url, timeout=self.timeout, auth=self.auth, params=params)
         response.raise_for_status()
         return response.json()
 
