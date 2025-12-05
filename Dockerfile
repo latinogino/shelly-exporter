@@ -21,4 +21,4 @@ ENV SHELLY_HOST="" \
 
 EXPOSE 8000
 
-CMD ["python", "-m", "shelly_exporter"]
+CMD ["python", "/app/src/shelly_exporter.py"]

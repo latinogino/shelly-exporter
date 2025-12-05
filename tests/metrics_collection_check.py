@@ -9,7 +9,7 @@ import sys
 
 from prometheus_client.core import CollectorRegistry
 
-from shelly_exporter.__main__ import ShellyCollector, ShellyPro3EMClient, _build_logger
+from shelly_exporter import ShellyCollector, ShellyPro3EMClient, _build_logger
 
 
 def main() -> int:
