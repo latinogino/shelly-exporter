@@ -197,6 +197,17 @@ class ShellyCollector:
 
 
 def parse_args() -> argparse.Namespace:
+    def _optional_env_int(var_name: str) -> Optional[int]:
+        value = os.environ.get(var_name)
+        if value is None or value == "":
+            return None
+        try:
+            return int(value)
+        except ValueError as exc:  # pragma: no cover - validated via argparse when provided
+            raise argparse.ArgumentTypeError(
+                f"Environment variable {var_name} must be an integer"
+            ) from exc
+
     parser = argparse.ArgumentParser(description="Prometheus exporter for Shelly Pro 3EM")
     parser.add_argument(
         "--host",
@@ -212,7 +223,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--shelly-port",
         type=int,
-        default=os.environ.get("SHELLY_PORT"),
+        default=_optional_env_int("SHELLY_PORT"),
         help="Optional port for the Shelly device",
     )
     parser.add_argument(
