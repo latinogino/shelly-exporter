@@ -48,7 +48,7 @@ ished to your registry.
      --restart unless-stopped \
      shelly-exporter
    ```
-For Windows Powershell:
+  For Windows Powershell:
    ```bash
    docker run -d --name shelly-exporter -e SHELLY_HOST=10.0.30.12 -e LISTEN_PORT=8000 -p 8000:8000 --restart unless-stopped shelly-exporter
    ```
