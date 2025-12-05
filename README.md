@@ -31,7 +31,7 @@ A lightweight Prometheus exporter that scrapes metrics directly from a Shelly Pr
 ## Installation for Windows
 Run the Docker image from PowerShell with equivalent environment variables:
 ```powershell
-docker run -d --name shelly-exporter -e SHELLY_HOST=10.0.30.12 -e LISTEN_PORT=8000 -p 8000:8000 --restart unless-stopped shelly-exporter
+docker run -d --name shelly-exporter -e SHELLY_HOST=192.0.2.10 -e LISTEN_PORT=8000 -p 8000:8000 --restart unless-stopped shelly-exporter
 ```
 
 ## Configuration
