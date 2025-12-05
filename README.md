@@ -22,37 +22,44 @@ The exporter can be configured via command-line flags or environment variables. 
 | `--timeout` | `SHELLY_TIMEOUT` | `5` | Shelly API request timeout (seconds). |
 | `--verbose` | _n/a_ | off | Enable debug logging. |
 
-## Running with Docker
+## Running with Docker (Linux)
 
-Build the image locally and run it on Linux:
+The exporter is built to run well on Linux hosts. You can either build the image locally or pull one that you have already publ
+ished to your registry.
 
-```bash
-docker build -t shelly-pro-3em-exporter .
-```
+1. Build the image (run from the repository root):
 
-Run the container, providing your Shelly host/IP:
+   ```bash
+   docker build -t shelly-pro-3em-exporter .
+   ```
 
-```bash
-docker run -d \
-  --name shelly-exporter \
-  -e SHELLY_HOST=192.0.2.10 \
-  -p 8000:8000 \
-  shelly-pro-3em-exporter
-```
+2. Start the container, passing your Shelly device address via environment variables:
 
-Visit the metrics endpoint in your browser or Prometheus scrape configuration at:
+   ```bash
+   docker run -d \
+     --name shelly-exporter \
+     -e SHELLY_HOST=192.0.2.10 \
+     -e LISTEN_PORT=8000 \
+     -p 8000:8000 \
+     --restart unless-stopped \
+     shelly-pro-3em-exporter
+   ```
 
-```
-http://localhost:8000/metrics
-```
+3. Confirm that the exporter is responding:
+
+   ```bash
+   curl http://localhost:8000/metrics
+   ```
+
+The same commands work for a pre-built image (replace `shelly-pro-3em-exporter` with the published tag you want to pull).
 
 ## Local execution
 
-You can also run the exporter without Docker:
+You can also run the exporter without Docker (from the repository root):
 
 ```bash
 pip install -r requirements.txt
-python exporter.py --host 192.0.2.10 --listen-port 8000
+PYTHONPATH=src python -m shelly_exporter --host 192.0.2.10 --listen-port 8000
 ```
 
 ## Prometheus metric reference

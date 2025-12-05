@@ -8,7 +8,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY exporter.py README.md ./
+COPY README.md ./
+COPY src ./src
+
+ENV PYTHONPATH="/app/src"
 
 ENV SHELLY_HOST="" \
     SHELLY_PROTOCOL="http" \
@@ -18,4 +21,4 @@ ENV SHELLY_HOST="" \
 
 EXPOSE 8000
 
-CMD ["python", "exporter.py"]
+CMD ["python", "-m", "shelly_exporter"]

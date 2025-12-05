@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import requests
-from prometheus_client import CollectorRegistry, GaugeMetricFamily, start_http_server
+from prometheus_client import start_http_server
+from prometheus_client.core import CollectorRegistry, GaugeMetricFamily
 
 
 def _build_logger(verbose: bool) -> logging.Logger:
