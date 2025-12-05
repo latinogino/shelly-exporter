@@ -64,6 +64,45 @@ pip install -r requirements.txt
 PYTHONPATH=src python -m shelly_exporter --host 192.0.2.10 --listen-port 8000
 ```
 
+## Testing against a Shelly device
+
+The repository includes simple smoke-test scripts that contact a Shelly device
+directly (no authentication is required by default):
+
+1. Clone the repository and install dependencies:
+
+   ```bash
+   git clone https://github.com/latinogino/shelly-exporter.git
+   cd shelly-exporter
+   pip install -r requirements.txt
+   ```
+
+2. Export `PYTHONPATH` so the tests can import the exporter code:
+
+   ```bash
+   export PYTHONPATH=src
+   ```
+
+3. Verify the Shelly HTTP APIs respond over the network:
+
+   ```bash
+   python tests/api_status_check.py --host 192.0.2.10
+   ```
+
+   The script queries both `/status` and `/rpc/EM.GetStatus` and reports the
+   HTTP status code and any top-level JSON keys that were returned.
+
+4. Run a one-shot metrics collection to confirm the exporter can produce
+   Prometheus metrics:
+
+   ```bash
+   python tests/metrics_collection_check.py --host 192.0.2.10
+   ```
+
+   Add `--verbose` to see detailed logging of the scrape request. The script
+   prints the metric families that were emitted; non-empty output indicates the
+   exporter can parse the Shelly response successfully.
+
 ## Prometheus metric reference
 
 - `shelly_up` – 1 when the exporter successfully scrapes the device, otherwise 0.
